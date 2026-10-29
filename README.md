@@ -5,7 +5,7 @@
 刷新四个项目的登录凭证：
 
 ```bash
-cd /home/cambricon/Workspace/1-git_repository/paper_003_overleaf
+cd /home/cambricon/Workspace/1-git_repository/paper_003/paper_002_overleaf
 python3 login_overleaf.py
 ./overleaf-sync list
 ```

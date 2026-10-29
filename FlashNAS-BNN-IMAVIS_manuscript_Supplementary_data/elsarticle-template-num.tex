@@ -539,6 +539,23 @@ The threshold in Algorithm~\ref{alg:flashnas} balances the cost of directly meas
 
 \textcolor{red}{CLE yielded the lowest Overall mean latency and between-search SD among the six latency estimators on each platform (Table~\ref{tab:architecture_selection_repeatability}). Relative to Actually measured, its mean latency gaps were 1.35\,ms/image on CPU, 0.13\,ms/image on GPU, and 0.003\,ms/image on FPGA. These results connect latency prediction to the measured performance of the architectures ultimately selected, rather than evaluating prediction error alone. Across the three searches, CLE remained close to hardware-guided selection while showing less between-search variation than the other estimators. The small FPGA differences should be read alongside the timing and search variability in the table; these measurements do not establish statistical significance for such small gaps.}
 
+
+\section{Structural intensity assumptions}
+\label{sec:structural_intensity}
+This section states analytical assumptions; it does not report additional hardware measurements. For a standard dense convolution with input dimensions $H_i\times W_i\times C_{\mathrm{in}}$, output dimensions $H_o\times W_o\times C_{\mathrm{out}}$, and kernel size $K$, count one multiply--accumulate as one structural operation:
+\begin{align}
+O &\approx H_oW_oC_{\mathrm{in}}C_{\mathrm{out}}K^2,\\
+Q_{\mathrm{ideal}} &\approx b_{\mathrm{in}}H_iW_iC_{\mathrm{in}}
+ + b_{\mathrm{out}}H_oW_oC_{\mathrm{out}}
+ + b_w C_{\mathrm{in}}C_{\mathrm{out}}K^2,\\
+I_{\mathrm{ideal}} &= O/Q_{\mathrm{ideal}}.
+\end{align}
+Here $b_{\mathrm{in}}$, $b_{\mathrm{out}}$, and $b_w$ denote effective storage bytes per element. The estimate assumes ideal reuse, counting each input, output, and weight element once; it omits additional traffic from padding materialization, intermediate buffers, and other implementation details. Unequal input and output spatial dimensions, including downsampling, must retain their respective dimensions in $Q_{\mathrm{ideal}}$.
+
+With equal spatial dimensions and equal storage cost, removing the common per-element byte factor gives the structural proxy in the main manuscript. Only under activation dominance, $HW(C_{\mathrm{in}}+C_{\mathrm{out}})\gg C_{\mathrm{in}}C_{\mathrm{out}}K^2$, does it simplify to $C_{\mathrm{in}}C_{\mathrm{out}}K^2/(C_{\mathrm{in}}+C_{\mathrm{out}})$, and only with equal channels does this become $C_iK^2/2$.
+
+Neither $Q_{\mathrm{ideal}}$ nor the structural proxy measures device traffic. BNN packing, buffering, accumulation, and operator fusion can change actual data movement. A device Roofline requires operation counts and transferred bytes at a specified memory interface, consistent with its throughput and bandwidth bounds. Figure 4(a) in the main manuscript is FPGA-specific; no additional CPU/GPU Roofline validation is claimed here. These expressions motivate searching kernel size and width rather than replace CLE or measured latency.
+
 \FloatBarrier
 \bibliographystyle{elsarticle-num}
 \bibliography{cas-refs}

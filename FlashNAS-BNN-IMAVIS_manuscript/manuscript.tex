@@ -67,7 +67,7 @@
 \begin{abstract}
 Neural architecture search (NAS) has been widely used to design accurate binary neural networks (BNNs), spanning both cell-based designs and chain-structured architectures. Despite strong accuracy on large-scale benchmarks, enabling efficient visual recognition with chain-structured BNNs across heterogeneous platforms remains challenging because (1) cross-platform adaptation typically requires expensive per-device searches and (2) BNN latency optimization is often guided by proxy costs (e.g., FLOPs) rather than measured real-device latency. 
 To address these issues, we present FlashNAS-BNN, \textcolor{red}{a chain-structured binary NAS framework for efficient search and deployment.} For search efficiency, we combine a chain information-flow accuracy predictor (CIF-Net) with a two-stage search strategy that reuses accuracy-screened candidates and avoids evaluating clearly suboptimal designs on each device. For deployment efficiency, we introduce cross-platform latency estimation (CLE), which improves latency prediction across diverse hardware platforms and robustly identifies latency-optimized architectures.
-\textcolor{red}{Experimental results show that, under the evaluated search setting with cross-platform reuse of the predictor and screened candidates, FlashNAS-BNN incurs a lower cumulative cost, including offline preparation, than independent NAS-BNN searches for three or more target platforms.} FlashNAS-BNN also achieves consistent latency optimization across CPU, GPU, and FPGA. \textcolor{red}{It reduces latency by 47.1\%, 16.0\%, and 6.8\% over ReActNet-A, and by 39.6\%, 10.6\%, and 8.6\% over corresponding platform-optimized NAS-BNN architectures, on CPU, GPU, and FPGA, respectively, at comparable accuracy.} Code is available at \url{https://github.com/WanRui37/FlashNAS-BNN}.
+\textcolor{red}{Experimental results show that FlashNAS-BNN incurs a lower cumulative cost, including offline preparation, than independent NAS-BNN searches for three or more target platforms.} FlashNAS-BNN also achieves consistent latency optimization across CPU, GPU, and FPGA. \textcolor{red}{It reduces latency by 47.1\%, 16.0\%, and 6.8\% over ReActNet-A, and by 39.6\%, 10.6\%, and 8.6\% over corresponding platform-optimized NAS-BNN architectures, on CPU, GPU, and FPGA, respectively, at comparable accuracy.} Code is available at \url{https://github.com/WanRui37/FlashNAS-BNN}.
 \end{abstract}
 
 \begin{graphicalabstract}
@@ -94,15 +94,18 @@ diverse hardware platforms \sep
 \section{Introduction}
 In recent years, binary neural networks (BNNs) have attracted growing attention for efficient visual recognition because they enable fast inference on resource-constrained edge devices. Their advantages have led to applications in image classification~\cite{LIN2025105646, VORABBI2025105524}, object detection~\cite{Lin2025}, and other vision tasks. Existing BNN design mainly follows two paradigms: manual design and neural architecture search (NAS). Manual design methods have progressively narrowed the accuracy gap between BNNs and real-valued networks through improved quantization schemes~\cite{Rastegari2016, Adrian2019,qin2020forward,lin2020rotated,xu2021recu,Tu2022}, better architectures~\cite{Liu2018, Liu2020,Joseph2020,Tu2022,Zhang2022, Guo2022,lee2023insta,Zhang2025}, and optimized training strategies~\cite{Liu2018,martinez2020training,Liu2020,shang2022lipschitz,livochka2021initialization,liu2021adam}.
 
-NAS for BNNs mainly falls into two paradigms: cell-based and chain-structured. Cell-based NAS (e.g., BATS~\cite{Bulat2020}, BNAS~\cite{Kim2020}, and EBNAS~\cite{Shi2023}) searches for a compact computational cell and stacks it to form the final network. This paradigm enables efficient gradient-based optimization and achieves competitive performance on small-scale datasets such as CIFAR-10/100~\cite{Krizhevsky2009}. However, its search space mainly captures micro-level operator combinations and intra-cell connections. As a result, it is less effective at optimizing macro-level factors such as depth, width allocation, and stage ratios, which are critical for scaling to large benchmarks like ImageNet. In contrast, chain-structured NAS directly searches macro architectures, such as depth, width, and kernel configurations. For example, NAS-BNN~\cite{Lin2025} introduces a training strategy tailored to chain-structured BNN search and achieves slightly higher accuracy than strong handcrafted baselines under the same operation budget on ImageNet. However, existing methods still face two key limitations for real-world deployment: repeated search across platforms is prohibitively expensive, and architecture optimization is often guided by proxy costs (e.g., OPs/FLOPs) rather than measured real-device latency.
+NAS for BNNs mainly falls into two paradigms: cell-based and chain-structured. \textcolor{red}{Their search-space structures are illustrated in Fig.~\ref{fig:1}(a).} Cell-based NAS (e.g., BATS~\cite{Bulat2020}, BNAS~\cite{Kim2020}, and EBNAS~\cite{Shi2023}) searches for a compact computational cell and stacks it to form the final network. This paradigm enables efficient gradient-based optimization and achieves competitive performance on small-scale datasets such as CIFAR-10/100~\cite{Krizhevsky2009}. However, its search space mainly captures micro-level operator combinations and intra-cell connections. As a result, it is less effective at optimizing macro-level factors such as depth, width allocation, and stage ratios, which are critical for scaling to large benchmarks like ImageNet. In contrast, chain-structured NAS directly searches macro architectures, such as depth, width, and kernel configurations. For example, NAS-BNN~\cite{Lin2025} introduces a training strategy tailored to chain-structured BNN search and achieves slightly higher accuracy than strong handcrafted baselines under the same operation budget on ImageNet. However, existing methods still face two key limitations for real-world deployment: repeated search across platforms is prohibitively expensive, and architecture optimization is often guided by proxy costs (e.g., OPs/FLOPs) rather than measured real-device latency.
 
 \begin{figure}
     \centering
-    \includegraphics[height=0.20\textheight]{./figs/Figure_1_a.pdf}
-    \caption{\textcolor{red}{Illustration of the cell-based and chain-structured neural architecture search spaces.}}\label{fig:1}
+    \begin{tabular}{cc}
+        \includegraphics[height=0.20\textheight]{./figs/Figure_1_a.pdf} & \includegraphics[height=0.20\textheight]{./figs/Figure_1_b.pdf} \\
+        \scriptsize (a) & \scriptsize (b)\\
+    \end{tabular}
+    \caption{\textcolor{red}{Comparison of cell-based and chain-structured NAS. (a) Search-space illustration. (b) Reported ImageNet-1K Top-1 accuracy and average search cost per platform for $M=3$, under the accounting in Table~\ref{tab:search_cost}. FlashNAS-BNN-E uses its 256-epoch-per-phase result; baseline training protocols differ. FlashNAS-BNN costs include offline preparation and both online stages with cross-platform reuse; NAS-BNN supernet training and unreported baseline offline costs are excluded. Accuracy and search cost summarize model results and framework costs, respectively.}}\label{fig:1}
 \end{figure}
 
-\textcolor{red}{Chain-structured NAS can incur high search costs when each target platform requires an independent search. NAS-BNN reports a search cost of 480 GPU-hours per platform. For methods that require a new search for each target platform, the total cost grows with the number of platforms. For example, three independent NAS-BNN searches require 1440 GPU-hours. This motivates methods that reuse search results across platforms.}
+\textcolor{red}{Chain-structured NAS can incur high search costs when each target platform requires an independent search. NAS-BNN reports a search cost of 480 GPU-hours per platform, totaling 1440 GPU-hours for three independent searches. This motivates reuse across platforms. Figure~\ref{fig:1}(b) summarizes the reported accuracy and the average search cost per platform for three target platforms. FlashNAS-BNN-E achieves 69.82\% Top-1 accuracy, compared with 60.4\%, 62.6\%, and 64.3\% for BATS, EBNAS, and BNAS, respectively, under their reported training protocols. With the same predictor and Stage-I candidates reused, FlashNAS-BNN incurs 1365.17 GPU-hours over three platforms, or 455.06 GPU-hours per platform, versus 480 GPU-hours for NAS-BNN under the accounting in Table~\ref{tab:search_cost}. This amortized advantage does not imply a lower total cost for a single platform; the offline preparation and reuse assumptions are detailed in Section~\ref{sec:search_time}.}
 
 Second, prior BNN NAS designs often rely on OPs/FLOPs as the primary latency proxy, implicitly assuming a strong monotonic relation between OPs and runtime and thus understating the effect of architectural choices on real-device latency. As shown in Fig.~\ref{fig:2}(a), NAS-BNN has lower OPs than BNAS but higher measured latency on Cortex-X4 with Huawei's Noah's Bolt toolkit~\cite{Huawei2020}. To investigate this mismatch, we retrain NAS-BNN with the same training recipe and analyze two representative architectures. Fig.~\ref{fig:2}(b) shows that although Arch~2 has higher cumulative OPs, its cumulative latency grows more slowly in later layers, resulting in lower end-to-end runtime.
 
@@ -155,7 +158,7 @@ This section presents FlashNAS-BNN, an efficient chain-structured binary NAS fra
         \scriptsize (b) 
     % \end{tabularx}
     \end{tabular}
-    \caption{Motivation and searchable design derived from roofline analysis. (a) Roofline results on an FPGA platform, where latency profiling is less noisy, indicate that early $1\times1$ convolutions in ReActNet-style blocks can be memory-bound. (b) We therefore relax the fixed "3$\times$3 + 1$\times$1" pattern and search  depth/width/kernel configurations for latency-efficient architectures.}\label{fig:4}
+    \caption{Roofline-informed motivation and searchable architecture design. (a) Representative FPGA-specific Roofline analysis of ReActNet-style convolutions. (b) Searchable depth, width, and kernel configurations obtained by relaxing the fixed ``3$\times$3 + 1$\times$1'' pattern. Panel (a) provides platform-specific motivation rather than cross-platform validation.}\label{fig:4}
 \end{figure}
 \begin{table}[ht]
 	\centering
@@ -181,22 +184,22 @@ This section presents FlashNAS-BNN, an efficient chain-structured binary NAS fra
 \subsection{Architecture search space}\label{search_space}
 To avoid searching the intractable full BNN design space, we adopt the widely used ReActNet as the backbone template. We fix the overall topology and focus on macro configurations that critically affect real-device latency.
 
-Following the roofline model, the attainable performance on a platform $p$ is bounded by
+Following the roofline model, the attained performance on a platform $p$ is bounded by
 \begin{equation}
-P(p) = \min\!\big(\mathrm{Th}_{\max}(p),~ \mathrm{BW}(p)\cdot I\big),
+P_{\mathrm{attained}}(p) \leq \min\!\big(\mathrm{Th}_{\max}(p),~\mathrm{BW}(p)I_{\mathrm{device}}(p)\big),
 \end{equation}
-where $\mathrm{Th}_{\max}(p)$ is the peak compute throughput and $\mathrm{BW}(p)$ is the effective memory bandwidth.
-$I=\mathrm{Ops}/\mathrm{IO}$ denotes the arithmetic intensity, where $\mathrm{IO}$ is an approximate data-traffic volume.
-Given that ReActNet basic blocks rely on both $3\times3$ and $1\times1$ convolutions, we approximate the arithmetic intensity $I$ for a standard layer as:
-\begin{align}
-    I = \frac{\text{Ops}}{\text{IO}} \approx \frac{H W \cdot C_i^2 \cdot K_i^2}{2 H W \cdot C_i + C_i^2 \cdot K_i^2} \approx \frac{C_i \cdot K_i^2}{2},
-    \label{eq:intensity}
-\end{align}
-assuming activation dominance ($H W \gg C_i K_i^2$) in early stages.
-Eq.~\ref{eq:intensity} suggests that small kernels (e.g., $1\times1$) and narrow channels reduce arithmetic intensity and tend to be memory-bound (as validated in Fig.~\ref{fig:4}).
-Based on this formulation, we distill a compact search space governing three coupled factors:
-(1) kernel size $K_i$ and channel width $C_i$, which determine the operating point on the roofline curve (efficiency); and
-(2) stage depth $D_i$, which acts as a linear multiplier for the cumulative latency burden (volume).
+where $\mathrm{Th}_{\max}(p)$ is the peak compute throughput, $\mathrm{BW}(p)$ is the bandwidth of the memory interface under consideration, and $I_{\mathrm{device}}(p)$ is the operation count divided by the bytes transferred across that interface. Operation counts, throughput, and bandwidth must use consistent units. The crossover intensity is $\mathrm{Th}_{\max}(p)/\mathrm{BW}(p)$; low intensity alone does not establish an observed memory bottleneck.
+
+For a standard dense convolution with equal input and output spatial dimensions and equal storage cost per tensor element, we use the following structural intensity proxy, counting one multiply--accumulate as one structural operation:
+\begin{equation}
+I_{\mathrm{struct}} \approx
+\frac{HW C_{\mathrm{in}}C_{\mathrm{out}}K^2}
+{HW(C_{\mathrm{in}}+C_{\mathrm{out}})+C_{\mathrm{in}}C_{\mathrm{out}}K^2}.
+\label{eq:intensity}
+\end{equation}
+When activation storage dominates the weight term, i.e., $HW(C_{\mathrm{in}}+C_{\mathrm{out}})\gg C_{\mathrm{in}}C_{\mathrm{out}}K^2$, this reduces to $I_{\mathrm{struct}}\approx C_{\mathrm{in}}C_{\mathrm{out}}K^2/(C_{\mathrm{in}}+C_{\mathrm{out}})$. The further assumption $C_{\mathrm{in}}=C_{\mathrm{out}}=C_i$ gives $I_{\mathrm{struct}}\approx C_iK^2/2$. This structural proxy is not measured device-level Ops/Byte. A byte-aware formulation for unequal spatial dimensions and its assumptions are given in the supplementary material, ``Structural intensity assumptions.''
+
+Kernel size and channel width change the balance between computation and data movement, with effects that depend on layer dimensions and the target platform. This motivates exploring both dimensions rather than prescribing a universally efficient configuration. Stage depth further changes the total workload and execution dependencies; its effect on end-to-end latency depends on the deployment schedule, particularly for streaming FPGA implementations. Figure~\ref{fig:4}(a) provides FPGA-specific motivation, not validation of the same behavior on CPU and GPU. Platform-specific architecture selection is therefore guided by CLE and measured hardware latency rather than by the structural intensity proxy alone.
 
 The resulting search space is formally parameterized as:
 \begin{align}
@@ -305,16 +308,7 @@ Here, $(h_{s,t},c_{s,t})$ are the hidden and cell states of the LSTM for stage $
 
 \begin{figure}
     \centering
-    \fbox{\begin{minipage}{0.90\linewidth}
-    \centering\small\color{red}
-    \textbf{FPGA: sequence-based end-to-end regression}\\[3pt]
-    Layer attributes $\rightarrow$ embedding/MLP $\rightarrow$ LSTM $\rightarrow$ sequence representation\\
-    Global architecture attributes $\rightarrow$ MLP $\rightarrow$ global representation\\
-    Concatenated representations $\rightarrow$ MLP $\rightarrow$ predicted ms/image\\[9pt]
-    \textbf{CPU/GPU: additive execution-unit regression}\\[3pt]
-    Execution-unit attributes $\rightarrow$ embedding/MLP $\rightarrow$ predicted unit times\\
-    Predicted unit times $\rightarrow$ sum under non-overlapped scheduling $\rightarrow$ predicted ms/image
-    \end{minipage}}
+    \includegraphics[width=0.8\columnwidth]{figs/Figure_6.pdf}
     \caption{\textcolor{red}{Platform-specific latency prediction models. FPGA uses an LSTM layer-sequence encoder fused with global architecture features to regress end-to-end latency. CPU/GPU use additive execution-unit estimates under non-overlapped scheduling.}}
     \label{fig:6}
 \end{figure}
@@ -489,30 +483,30 @@ As shown in Fig.~\ref{fig:7}(b), FlashNAS-BNN-I adopts an all-$3\times3$ convolu
 
 \subsection{\textcolor{red}{Results on search cost}}
 \label{sec:search_time}
-\textcolor{red}{Table~\ref{tab:search_cost} compares the search costs of FlashNAS-BNN with representative BNN NAS methods. NAS-BNN serves as the primary baseline due to its similar chain-structured search space, while cell-based methods are included for reference. For a fixed dataset and search setting, FlashNAS-BNN reuses the same CIF-Net predictor and Stage-I candidate set across target platforms, whereas NAS-BNN requires an independent search for each platform. Under this reuse setting and the accounting scheme in Table~\ref{tab:search_cost}, the cumulative costs over $M$ platforms are $T_{\text{NAS-BNN}}(M)=480M$ and $T_{\text{ours}}(M)=1363.73+0.48M$ GPU-hours. FlashNAS-BNN therefore achieves a lower cumulative search cost for three or more platforms ($M^{*}\approx2.84$). When a new dataset requires a separately trained predictor, its offline preparation cost must be accounted for again.}
+\textcolor{red}{Table~\ref{tab:search_cost} compares the search costs of FlashNAS-BNN with representative BNN NAS methods. NAS-BNN serves as the primary baseline due to its similar chain-structured search space, while cell-based methods are included for reference. For a fixed dataset and search setting, FlashNAS-BNN reuses the same CIF-Net predictor and Stage-I candidate set across target platforms, whereas NAS-BNN requires an independent search for each platform. Under this reuse setting and the accounting scheme in Table~\ref{tab:search_cost}, the cumulative costs over $M$ platforms are $T_{\text{NAS-BNN}}(M)=480M$ and $T_{\text{ours}}(M)=1363.73+0.48M$ GPU-hours. FlashNAS-BNN therefore achieves a lower cumulative search cost for three or more platforms ($M^{*}\approx2.84$). At $M=3$, the average costs are 455.06 and 480.00 GPU-hours per platform for FlashNAS-BNN and NAS-BNN, respectively, as plotted in Fig.~\ref{fig:1}(b). When a new dataset requires a separately trained predictor, its offline preparation cost must be accounted for again.}
 
 \begin{table}[ht]
 \centering
-\caption{\textcolor{red}{Search-cost comparison (GPU-hours). Total combines reported offline preparation and online search costs over $M$ target platforms. NAS-BNN reports 220 GPU-days for supernet training and 20 GPU-days for search; the latter (480 GPU-hours) is used as the per-platform search cost, while supernet training is excluded from Total. For cell-based methods, additional-platform and $M=3$ costs extrapolate the reported single-search cost, assuming one independent search per platform; unreported offline costs are omitted. For FlashNAS-BNN, offline preparation includes accuracy-label generation and CIF-Net fitting. A dash denotes an unreported offline cost.}}
+\caption{\textcolor{red}{Search-cost comparison (GPU-hours). Total combines reported offline preparation and online search costs over $M$ target platforms. Avg./platform is Total divided by $M$, reported for $M=3$. NAS-BNN reports 220 GPU-days for supernet training and 20 GPU-days for search; the latter (480 GPU-hours) is used as the per-platform search cost, while supernet training is excluded from Total. For cell-based methods, additional-platform and $M=3$ costs extrapolate the reported single-search cost, assuming one independent search per platform; unreported offline costs are omitted. For FlashNAS-BNN, offline preparation includes accuracy-label generation and CIF-Net fitting. A dash denotes an unreported offline cost.}}
 \label{tab:search_cost}
 \small
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.15}
 
 {\color{red}
-\begin{tabular}{l c c c c c c}
+\begin{tabular}{l c c c c c c c}
 \toprule[1.5pt]
-Method & Space & \makecell{Offline\\prep.} & \makecell{First\\online} & \makecell{Additional\\online} & \makecell{Total\\($M=1$)} & \makecell{Total\\($M=3$)} \\
+Method & Space & \makecell{Offline\\prep.} & \makecell{First\\online} & \makecell{Additional\\online} & \makecell{Total\\($M=1$)} & \makecell{Total\\($M=3$)} & \makecell{Avg./platform\\($M=3$)} \\
 \midrule
-BNAS~\cite{Kim2020} & Cell & -- & 9.60 & 9.60 & 9.60 & 28.80 \\
-BATS~\cite{Bulat2020} & Cell & -- & 6.00 & 6.00 & 6.00 & 18.00 \\
-EBNAS~\cite{Shi2023} & Cell & -- & 0.96 & 0.96 & 0.96 & 2.88 \\
-UBNAS~\cite{tan2024universal} & Cell & -- & 0.96 & 0.96 & 0.96 & 2.88 \\
+BNAS~\cite{Kim2020} & Cell & -- & 9.60 & 9.60 & 9.60 & 28.80 & 9.60 \\
+BATS~\cite{Bulat2020} & Cell & -- & 6.00 & 6.00 & 6.00 & 18.00 & 6.00 \\
+EBNAS~\cite{Shi2023} & Cell & -- & 0.96 & 0.96 & 0.96 & 2.88 & 0.96 \\
+UBNAS~\cite{tan2024universal} & Cell & -- & 0.96 & 0.96 & 0.96 & 2.88 & 0.96 \\
 \midrule
-NAS-BNN~\cite{Lin2025} & Chain & -- & 480.00 & 480.00 & 480.00 & 1440.00 \\
+NAS-BNN~\cite{Lin2025} & Chain & -- & 480.00 & 480.00 & 480.00 & 1440.00 & 480.00 \\
 \midrule
 \rowcolor{gray!20}
-FlashNAS-BNN & Chain & 1363.20 & 1.01 & 0.48 & 1364.21 & 1365.17 \\
+FlashNAS-BNN & Chain & 1363.20 & 1.01 & 0.48 & 1364.21 & 1365.17 & 455.06 \\
 \bottomrule[1.5pt]
 \end{tabular}
 }
@@ -623,8 +617,8 @@ By screening candidates with (accuracy, OPs) in Stage-I, our two-stage method fo
     \midrule
     \multicolumn{1}{l}{\multirow{7}{*}{FPGA}} & Actually measured    & - & - & - & \textcolor{red}{2.297 $\pm$ 0.004} \\
     \multicolumn{1}{l}{} &\textcolor{red}{OPs Proxy} & \textcolor{red}{1.2 $\pm$ 0.8} & \textcolor{red}{7.6 $\pm$ 1.2} & \textcolor{red}{31.2 $\pm$ 1.6} & \textcolor{red}{2.394 $\pm$ 0.075} \\
-    \multicolumn{1}{l}{} &$\nu$-SVR~\cite{Baker2017}      & 12.4$\pm$3.6 & 36.0$\pm$2.4 & 79.2$\pm$1.2 & \textcolor{red}{2.344 $\pm$ 0.013} \\
-    \multicolumn{1}{l}{} &BRP-NAS~\cite{Dudziak2020}      & 13.2$\pm$2.4 & 39.2$\pm$2.0 & 81.6$\pm$0.8 & \textcolor{red}{2.331 $\pm$ 0.011} \\
+    \multicolumn{1}{l}{} &$\nu$-SVR~\cite{Baker2017}      & 12.4$\pm$3.6 & 36.0$\pm$2.4 & 79.2$\pm$1.2 & \textcolor{red}{2.310 $\pm$ 0.008} \\
+    \multicolumn{1}{l}{} &BRP-NAS~\cite{Dudziak2020}      & 13.2$\pm$2.4 & 39.2$\pm$2.0 & 81.6$\pm$0.8 & \textcolor{red}{2.310 $\pm$ 0.009} \\
     \multicolumn{1}{l}{} &CLCDLP~\cite{Lin2024}       & 14.4$\pm$3.2 & 38.8$\pm$2.8 & 83.6$\pm$1.2 & \textcolor{red}{2.320 $\pm$ 0.007} \\
     \multicolumn{1}{l}{} &\textcolor{red}{nn-Meter~\cite{Zhang2021nnMeter}} & \textcolor{red}{14.0 $\pm$ 2.8} & \textcolor{red}{39.6 $\pm$ 2.0} & \textcolor{red}{82.4 $\pm$ 1.6} & \textcolor{red}{2.309 $\pm$ 0.007} \\
     \cline{2-6}
