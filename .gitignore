@@ -1,0 +1,7 @@
+.venv/
+.olauth
+**/.olauth
+**/.olsync-state.json
+.overleaf-login-*/
+.*.log
+__pycache__/

@@ -1,0 +1,147 @@
+\documentclass{jourcl}
+
+% Path to your logo
+\ImagePath{imgs/jourcl-logo.png}
+% \ImagePath{imgs/BJTU.pdf}
+% Path to your signature (if you have one). 
+% \signaturePath{imgs/jourcl-signature.png}
+
+% recommended Editors / Reviewers -- change according to your data
+%----------------------------------------------------------------------
+
+% If you have recommended Editors / Reviewers
+% Example 
+
+% \FirstRecommended{Reviewer}
+% \FirstNameSurname{Name Surname}
+% \FirstInstitution{University of City, \\Faculty of Cover Letters}
+% \FirstEmail{name@organization.edu}
+% \SecondRecommended{Reviewer}
+% \SecondNameSurname{Name2 Surname2}
+% \SecondInstitution{University of City, \\Faculty of Cover Letters}
+% \SecondEmail{name2@organization.edu}
+%\ThirdRecommended{Editor}
+%\ThirdNameSurname{Name3 Surname3}
+%\ThirdInstitution{University of City, \\Faculty of Cover Letters}
+%\ThirdEmail{name3@organization.edu}
+
+% Else - leave blank. If only 2 reviewers, leave Third..{}
+%\FirstRecommended{}\FirstNameSurname{}\FirstInstitution{}\FirstEmail{}
+%\SecondRecommended{}\SecondNameSurname{}\SecondInstitution{}\SecondEmail{}
+\ThirdRecommended{}\ThirdNameSurname{}\ThirdInstitution{}\ThirdEmail{}
+
+%----------------------------------------------------------------------
+% Your data
+%----------------------------------------------------------------------
+% change according to your data
+\NameSurname{Wan Rui}
+% Orcid ID of author
+\AuthorOrcid{0009-0007-2606-0334}
+% name of the institution
+\InstitutionName{Beijing Jiaotong University}
+% address 1 - street name and house number
+\StreetNo{No.3 Shangyuancun, Haidian District}
+% address 2 - postal code, city, country
+\CityPostal{Beijing, China}
+% email of author
+\Email{22110093@bjtu.edu.cn}
+% phone of author
+\Phone{}
+
+%----------------------------------------------------------------------
+% Article data
+%----------------------------------------------------------------------
+% journal name
+\JournalName{Image and Vision Computing}
+% title of your paper
+\Title{Chain-Structured Binary Neural Architecture Search for Efficient Visual Recognition across Platforms}
+% name of the EiC
+\Editor{}
+\SpecialIssue{}
+
+\abstract{
+\begin{enumerate}
+    \item \textbf{Image classification benchmarks.} We evaluate FlashNAS-BNN on ImageNet-100, ImageNet-1K, CIFAR-10, and CIFAR-100, comparing it with representative manually designed and NAS-based BNNs. The results demonstrate its accuracy--latency trade-offs for efficient visual recognition.
+    \item \textbf{Hardware-aware visual computing.} We evaluate platform-specific architectures on an ARM Cortex-X4 CPU, an ARM Mali-G77 GPU, and a Xilinx XC7VX690T FPGA. The revised manuscript and supplementary material specify the measurement protocol and report latency standard deviations, with detailed results from three independent searches for the CLE evaluation.
+    \item \textbf{Relevance to the journal.} The manuscript complements research on BNN training and embedded visual computing in \pJournalName by addressing architecture search and measured-latency optimization for image classification across heterogeneous platforms.
+\end{enumerate}
+}
+
+%----------------------------------------------------------------------
+% Cover letter main part
+%----------------------------------------------------------------------
+% No need to change the following part - here for customization
+
+% Custom "To the editor: Editor Name"
+% \toEditor{To the editor: \pEditor}
+
+% Addressing the Person
+\PersonAddressing{Dear Editor}
+
+\Introduction{We submit the revised manuscript titled ``\pTitle'' for consideration for publication in \pJournalName. We thank the editor for the constructive comments, which have helped us improve the technical clarity, experimental reporting, and presentation of the manuscript. A point-by-point response accompanies this submission. \\
+The manuscript presents FlashNAS-BNN, a chain-structured binary neural architecture search framework for efficient image classification across heterogeneous platforms. It combines a chain information-flow accuracy predictor (CIF-Net), a two-stage search strategy that reuses accuracy-screened candidates, and cross-platform latency estimation (CLE) to select architectures according to device latency. \\
+\textbf{Search efficiency.} For a given benchmark group, offline preparation requires 1363.20 GPU-hours, including accuracy-label generation and CIF-Net fitting. Online search takes 1.01 GPU-hours for the first platform and 0.48 GPU-hours for each additional platform when the same predictor and screened candidate set are reused. If a new dataset requires a separately trained predictor, its offline preparation cost must be accounted for again. \\
+\textbf{Deployment efficiency.} On ImageNet-100, the platform-specific FlashNAS-BNN variants reduce mean latency relative to ReActNet-A by 47.1\% on CPU, 16.0\% on GPU, and 6.8\% on FPGA, while achieving higher Top-1 accuracy in these comparisons. On CPU, FlashNAS-BNN-G achieves 164.57\,ms at 81.40\% Top-1 accuracy; its latency is 61.8\% lower than the NAS-BNN variant without CLE and 39.6\% lower than the variant with CLE, at comparable accuracy. These comparisons support latency-aware binary model design for resource-constrained visual applications.}
+
+% ending
+\final{We believe that the manuscript fits the scope of \pJournalName through its focus on efficient image classification, hardware-aware architecture search, and cross-platform deployment. Thank you for considering our revised manuscript.}
+
+% original work declaration
+\declaration{This manuscript is the authors' original work and has not been published nor has it been submitted simultaneously elsewhere. All authors have checked the manuscript and have agreed to the submission. We have no conflicts of interest to disclose.}
+
+% no conflicts of interest
+% \conflictofinterest{We have no conflicts of interest to disclose.}
+
+\valediction{\yourssincerely}
+
+\signature{\pNameSurname, on behalf of all authors}
+
+% In this part you can change the position of reviewers
+%----------------------------------------------------------------------
+% Render document
+%----------------------------------------------------------------------
+\begin{document}
+
+\large % Font size
+\aboutme{
+    \pNameSurname \orcidlink{\pAuthorOrcid}\\
+    \faIcon{university} \pInstitutionName\\
+    \pStreetNo\\
+    \pCityPostal\\
+    \faIcon{envelope} \pEmail \\
+    % \faIcon{phone-square-alt} \pPhone
+    }
+%----------------------------------------------------------------------
+
+\noindent\makebox[\linewidth]{\rule{0.9\paperwidth}{0.4pt}}
+
+% Today's date
+\today
+\vspace{-.7cm}
+% \ptoEditor
+
+\vspace*{1\baselineskip}
+\pPersonAddressing,
+
+\pIntroduction
+\begin{framed}
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+\noindent\textbf{Further reasons for the manuscript’s fit with the journal scope:}
+\vspace{-0.5em}
+\pabstract
+\end{framed}
+
+
+\vspace{-.7cm}
+
+\pfinal
+
+\pdeclaration\newline
+
+
+\pvalediction\par
+\vspace{-.7cm}
+\psignature
+
+\end{document}
