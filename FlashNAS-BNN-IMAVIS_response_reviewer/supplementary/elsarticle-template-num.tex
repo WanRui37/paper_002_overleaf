@@ -554,7 +554,16 @@ Here $b_{\mathrm{in}}$, $b_{\mathrm{out}}$, and $b_w$ denote effective storage b
 
 With equal spatial dimensions and equal storage cost, removing the common per-element byte factor gives the structural proxy in the main manuscript. Only under activation dominance, $HW(C_{\mathrm{in}}+C_{\mathrm{out}})\gg C_{\mathrm{in}}C_{\mathrm{out}}K^2$, does it simplify to $C_{\mathrm{in}}C_{\mathrm{out}}K^2/(C_{\mathrm{in}}+C_{\mathrm{out}})$, and only with equal channels does this become $C_iK^2/2$.
 
-Neither $Q_{\mathrm{ideal}}$ nor the structural proxy measures device traffic. BNN packing, buffering, accumulation, and operator fusion can change actual data movement. A device Roofline requires operation counts and transferred bytes at a specified memory interface, consistent with its throughput and bandwidth bounds. Figure 4(a) in the main manuscript is FPGA-specific; no additional CPU/GPU Roofline validation is claimed here. These expressions motivate searching kernel size and width rather than replace CLE or measured latency.
+The Roofline crossover intensity is $\mathrm{Th}_{\max}(p)/\mathrm{BW}(p)$ for the specified operation count and memory interface. A low intensity alone does not establish that the observed execution is limited by memory bandwidth. Neither $Q_{\mathrm{ideal}}$ nor the structural proxy measures device traffic. BNN packing, buffering, accumulation, and operator fusion can change actual data movement. A device Roofline requires operation counts and transferred bytes at a specified memory interface, consistent with its throughput and bandwidth bounds. Figure 4(a) in the main manuscript is FPGA-specific; no additional CPU/GPU Roofline validation is claimed here. These expressions motivate searching kernel size and width rather than replace CLE or measured latency.
+
+
+\section{Comparison protocols and cost accounting}
+\label{sec:comparison_accounting}
+Figure 1 combines reported model accuracies with framework search costs. FlashNAS-BNN-E uses the 256-epoch-per-phase result in that figure; baseline accuracies retain their published training protocols (main manuscript Table 3). These are not equal-training-budget retraining results. The 128-epoch-per-phase results are reported separately for comparisons with cell-based NAS.
+
+Search costs use GPU-hours. NAS-BNN reports 220 GPU-days for supernet training and 20 GPU-days for search; the latter is converted to 480 GPU-hours per platform. The supernet cost and unreported baseline offline costs are excluded from the main cost table. Cell-based baseline totals for $M$ platforms extrapolate one independent reported search per platform. FlashNAS-BNN includes 1363.20 GPU-hours for label generation and CIF-Net fitting, 0.53 GPU-hours for Stage I, and 0.48 GPU-hours for Stage II per platform, under reuse of the same predictor and Stage-I candidates. Thus $T(M)=1363.73+0.48M$, giving 1364.21 and 1365.17 GPU-hours for $M=1$ and $M=3$. These accounting choices define the comparison; they do not imply that unreported baseline preparation is free.
+
+On CIFAR-10/100, the accuracy differences between FlashNAS-BNN-C$^*$ and EBNAS are 0.12 and 0.11 percentage points. They are described as comparable accuracy; without repeated-run accuracy statistics, statistical significance is not established. The online and cumulative search costs are considered separately from these accuracy comparisons.
 
 \FloatBarrier
 \bibliographystyle{elsarticle-num}
