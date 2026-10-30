@@ -197,7 +197,7 @@ I_{\mathrm{struct}} \approx
 {HW(C_{\mathrm{in}}+C_{\mathrm{out}})+C_{\mathrm{in}}C_{\mathrm{out}}K^2}.
 \label{eq:intensity}
 \end{equation}
-Under activation dominance and equal channels, this proxy reduces to $I_{\mathrm{struct}}\approx C_iK^2/2$. The simplification, byte-aware formulation, and unequal-spatial-size case are detailed in the supplementary material, ``Structural intensity assumptions.
+Further derivations and byte-aware formulations for unequal spatial dimensions are provided in the supplementary material, ``Structural intensity assumptions.''
 
 Eq.~\ref{eq:intensity} shows how channel width and kernel size jointly affect computation and data-movement requirements, motivating their inclusion in the search space. Latency depends on both intensity and the total operation count. Figure~\ref{fig:4}(a) illustrates this computation--data-movement trade-off on FPGA. Stage depth is included separately because it changes the total workload and execution dependencies; its latency effect depends on the deployment schedule, particularly for streaming FPGA implementations. We therefore search depth, width, and kernel configurations, while CLE and measured hardware latency guide platform-specific selection.
 
@@ -214,7 +214,7 @@ K_i\in\mathcal{K}_i
 \right\},
 \label{eq:define_stage}
 \end{align}
-where candidate sets are summarized in Table~\ref{tab:1}.
+Here, $D_i$, $C_i$, and $K_i$ denote the depth, channel width, and kernel size of stage $i$, respectively; their candidate sets are summarized in Table~\ref{tab:1}. Within a fixed-width stage, convolutions use $C_{\mathrm{in}}=C_{\mathrm{out}}=C_i$, while channel-changing transitions retain distinct input and output widths in Eq.~\ref{eq:intensity}.
 
 \subsection{Two-stage search}\label{sec:two_stage}
 Let $\mathcal{A}$ denote the chain-structured BNN search space and $\mathcal{P}=\{p_1,\dots,p_M\}$ the target platforms. For architecture $a\in\mathcal{A}$, let $Acc(a)$ denote validation accuracy and $T(a,p)$ the measured end-to-end latency on platform $p\in\mathcal{P}$. For each platform $p$, the goal is to obtain architectures with a favorable accuracy--latency trade-off:
